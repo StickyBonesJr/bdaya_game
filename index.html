@@ -33,7 +33,13 @@ let inmuneSegundosRestantes = 0;
 let clickBloqueado = false;
 
 // Sprite de Blackdaya desde GitHub
-const imgBlackdaya = new Image();
+let imgBlackdaya = new Image();
+let blackdayaCargado = false;
+
+imgBlackdaya.onload = () => {
+  blackdayaCargado = true;
+};
+
 imgBlackdaya.src = "https://raw.githubusercontent.com/stickybonesjr/bdaya_game/main/assets/blackdaya_estatico.png";
 
 const jugador = {
@@ -216,7 +222,7 @@ function actualizarJugador() {
 }
 
 function dibujarJugador() {
-  if (imgBlackdaya.complete && imgBlackdaya.naturalWidth > 0) {
+  if (blackdayaCargado) {
     ctx.drawImage(imgBlackdaya, jugador.x, jugador.y, jugador.w, jugador.h);
   } else {
     ctx.fillStyle = jugador.vivo ? "skyblue" : "crimson";
