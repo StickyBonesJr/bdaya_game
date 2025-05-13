@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Blackdaya v1.1 – Mecánicas Finales</title>
+  <style>
+    body { margin: 0; background: #111; }
+    canvas {
+      background: #222;
+      display: block;
+      margin: auto;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+<canvas id="juego" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("juego");
+const ctx = canvas.getContext("2d");
+
+const sueloY = canvas.height;
+let obstáculos = [];
+let powerUps = [];
+let proyectiles = [];
+let años = 0;
+let tiempo = 0;
+let velocidadBase = 4;
+let efectoActivo = null;
+let efectoTimeout = null;
+let inmuneSegundosRestantes = 0;
+let clickBloqueado = false;
+
+const jugador = {
+  x: 100,
+  y: sueloY - 60,
+  w: 40,
+  h: 60,
+  vy: 0,
+  gravedad: 0.6,
+  enSuelo: true,
+  vivo: true,
+  invulnerable: false,
+  artefactos: 0
+};
+
+canvas.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  if (!jugador.vivo || clickBloqueado) return;
+
+  if (efectoActivo === "artefacto" && jugador.artefactos > 0) {
+    lanzarProyectil();
+    jugador.artefactos--;
+    if (jugador.artefactos <= 0) efectoActivo = null;
+
+    clickBloqueado = true;
+    setTimeout(() => clickBloqueado = false, 150);
+    return;
+  }
+
+  if (jugador.enSuelo) {
+    jugador.vy = -14;
+    jugador.enSuelo = false;
+  }
+});
+
+let distanciaMin = 220;
+let distanciaMax = 380;
+let siguienteEspacio = generarNuevaDistancia();
+
+function generarNuevaDistancia() {
+  return Math.floor(Math.random() * (distanciaMax - distanciaMin)) + distanciaMin;
+}
+
+function crearObstáculo() {
+  const altura = Math.floor(Math.random() * 50) + 30;
+  const ancho = Math.floor(Math.random() * 30) + 30;
+  const y = sueloY - altura;
+  obstáculos.push({ x: canvas.width, y, w: ancho, h: altura, velocidad: velocidadBase, contado: false });
+
+  if (Math.random() < 0.2) {
+    const tipo = Math.random() < 0.5 ? "artefacto" : "inmune";
+    powerUps.push({
+      tipo,
+      x: canvas.width + 60,
+      y: sueloY - altura - 40,
+      w: 20,
+      h: 20,
+      velocidad: velocidadBase,
+      recogido: false
+    });
+  }
+
+  siguienteEspacio = generarNuevaDistancia();
+}
+
+function puedeGenerarNuevo() {
+  if (obstáculos.length === 0) return true;
+  const ultimo = obstáculos[obstáculos.length - 1];
+  return ultimo.x + ultimo.w < canvas.width - siguienteEspacio;
+}
+
+function aplicarPowerUp(tipo) {
+  if (efectoTimeout) clearTimeout(efectoTimeout);
+  efectoActivo = tipo;
+
+  if (tipo === "inmune") {
+    jugador.invulnerable = true;
+    inmuneSegundosRestantes = 5;
+    efectoTimeout = setInterval(() => {
+      inmuneSegundosRestantes--;
+      if (inmuneSegundosRestantes <= 0) {
+        jugador.invulnerable = false;
+        efectoActivo = null;
+        clearInterval(efectoTimeout);
+        efectoTimeout = null;
+      }
+    }, 1000);
+  }
+
+  if (tipo === "artefacto") {
+    jugador.artefactos = 3;
+  }
+}
+
+function lanzarProyectil() {
+  proyectiles.push({
+    x: jugador.x + jugador.w,
+    y: jugador.y + jugador.h / 2,
+    w: 20,
+    h: 10,
+    velocidad: 8,
+    destruido: false
+  });
+}
+
+function actualizarObstáculos() {
+  obstáculos.forEach(o => {
+    o.x -= o.velocidad;
+    if (!o.contado && o.x + o.w < 0) {
+      años++;
+      o.contado = true;
+    }
+
+    const margen = 6;
+    const colision =
+      jugador.vivo &&
+      !jugador.invulnerable &&
+      jugador.x + margen < o.x + o.w &&
+      jugador.x + jugador.w - margen > o.x &&
+      jugador.y + margen < o.y + o.h &&
+      jugador.y + jugador.h - margen > o.y;
+
+    if (colision) {
+      jugador.vivo = false;
+    }
+  });
+
+  obstáculos = obstáculos.filter(o => o.x + o.w > -100);
+}
+
+function actualizarPowerUps() {
+  powerUps.forEach(p => {
+    p.x -= p.velocidad;
+
+    if (
+      !p.recogido &&
+      jugador.x < p.x + p.w &&
+      jugador.x + jugador.w > p.x &&
+      jugador.y < p.y + p.h &&
+      jugador.y + jugador.h > p.y
+    ) {
+      p.recogido = true;
+      aplicarPowerUp(p.tipo);
+    }
+  });
+
+  powerUps = powerUps.filter(p => p.x + p.w > -50 && !p.recogido);
+}
+
+function actualizarProyectiles() {
+  proyectiles.forEach(p => {
+    p.x += p.velocidad;
+    obstáculos.forEach((o, i) => {
+      if (
+        !p.destruido &&
+        p.x < o.x + o.w &&
+        p.x + p.w > o.x &&
+        p.y < o.y + o.h &&
+        p.y + p.h > o.y
+      ) {
+        obstáculos.splice(i, 1);
+        p.destruido = true;
+        años++; // suma un año al destruir con proyectil
+      }
+    });
+  });
+
+  proyectiles = proyectiles.filter(p => p.x < canvas.width && !p.destruido);
+}
+
+function actualizarJugador() {
+  jugador.vy += jugador.gravedad;
+  jugador.y += jugador.vy;
+
+  if (jugador.y >= sueloY - jugador.h) {
+    jugador.y = sueloY - jugador.h;
+    jugador.vy = 0;
+    jugador.enSuelo = true;
+  }
+}
+
+function dibujarJugador() {
+  ctx.fillStyle = jugador.vivo ? "skyblue" : "crimson";
+  ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
+}
+
+function dibujarObstáculos() {
+  ctx.fillStyle = "tomato";
+  obstáculos.forEach(o => {
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+  });
+}
+
+function dibujarPowerUps() {
+  powerUps.forEach(p => {
+    ctx.fillStyle = p.tipo === "inmune" ? "limegreen" : "orange";
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+}
+
+function dibujarProyectiles() {
+  ctx.fillStyle = "orange";
+  proyectiles.forEach(p => {
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+}
+
+function dibujarTexto() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px monospace";
+  ctx.fillText("Años: " + años, 20, 30);
+
+  if (efectoActivo === "artefacto") {
+    ctx.fillStyle = "orange";
+    ctx.fillText("Artefactos: " + jugador.artefactos, 20, 60);
+  }
+
+  if (efectoActivo === "inmune") {
+    ctx.fillStyle = "lime";
+    ctx.fillText(`INMUNE: ${inmuneSegundosRestantes}s`, 20, 60);
+  }
+
+  if (!jugador.vivo) {
+    ctx.fillStyle = "orangered";
+    ctx.font = "24px monospace";
+    ctx.fillText("¡Blackdaya ha sido despedido!", 220, 200);
+    ctx.fillText("Toca o pulsa para reiniciar", 230, 240);
+  }
+}
+
+function reiniciar() {
+  años = 0;
+  obstáculos = [];
+  powerUps = [];
+  proyectiles = [];
+  jugador.vivo = true;
+  jugador.invulnerable = false;
+  jugador.artefactos = 0;
+  efectoActivo = null;
+  inmuneSegundosRestantes = 0;
+  if (efectoTimeout) clearTimeout(efectoTimeout);
+  efectoTimeout = null;
+  jugador.y = sueloY - jugador.h;
+  jugador.vy = 0;
+  velocidadBase = 4;
+}
+
+canvas.addEventListener("click", () => {
+  if (!jugador.vivo) reiniciar();
+});
+
+function bucle() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (jugador.vivo && puedeGenerarNuevo()) crearObstáculo();
+
+  if (tiempo % 600 === 0) velocidadBase += 0.5;
+
+  actualizarJugador();
+  actualizarObstáculos();
+  actualizarPowerUps();
+  actualizarProyectiles();
+
+  dibujarJugador();
+  dibujarObstáculos();
+  dibujarPowerUps();
+  dibujarProyectiles();
+  dibujarTexto();
+
+  tiempo++;
+  requestAnimationFrame(bucle);
+}
+
+bucle();
+</script>
+</body>
+</html>
