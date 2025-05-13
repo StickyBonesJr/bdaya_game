@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Blackdaya v1.1 – Mecánicas Finales</title>
+  <title>Blackdaya v1.1 – Sprite Integrado</title>
   <style>
     body { margin: 0; background: #111; }
     canvas {
@@ -31,6 +31,10 @@ let efectoActivo = null;
 let efectoTimeout = null;
 let inmuneSegundosRestantes = 0;
 let clickBloqueado = false;
+
+// Sprite de Blackdaya desde GitHub
+const imgBlackdaya = new Image();
+imgBlackdaya.src = "https://raw.githubusercontent.com/stickybonesjr/bdaya_game/main/assets/blackdaya_estatico.png";
 
 const jugador = {
   x: 100,
@@ -192,7 +196,7 @@ function actualizarProyectiles() {
       ) {
         obstáculos.splice(i, 1);
         p.destruido = true;
-        años++; // suma un año al destruir con proyectil
+        años++;
       }
     });
   });
@@ -212,8 +216,12 @@ function actualizarJugador() {
 }
 
 function dibujarJugador() {
-  ctx.fillStyle = jugador.vivo ? "skyblue" : "crimson";
-  ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
+  if (imgBlackdaya.complete && imgBlackdaya.naturalWidth > 0) {
+    ctx.drawImage(imgBlackdaya, jugador.x, jugador.y, jugador.w, jugador.h);
+  } else {
+    ctx.fillStyle = jugador.vivo ? "skyblue" : "crimson";
+    ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
+  }
 }
 
 function dibujarObstáculos() {
