@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Blackdaya v1.1 – Sprite Integrado</title>
+  <title>Blackdaya v1.2 – Carga y Colisión Refinadas</title>
   <style>
     body { margin: 0; background: #111; }
     canvas {
@@ -21,6 +21,31 @@ const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
 const sueloY = canvas.height;
+
+// Assets
+const assets = {
+  blackdaya: "https://raw.githubusercontent.com/stickybonesjr/bdaya_game/main/assets/blackdaya_estatico.png"
+};
+
+const imagenes = {};
+let imagenesCargadas = 0;
+const totalImagenes = Object.keys(assets).length;
+let juegoListo = false;
+
+// Cargar imágenes
+for (let clave in assets) {
+  const img = new Image();
+  img.onload = () => {
+    imagenesCargadas++;
+    if (imagenesCargadas === totalImagenes) {
+      iniciarJuego();
+    }
+  };
+  img.src = assets[clave];
+  imagenes[clave] = img;
+}
+
+// Estado del juego
 let obstáculos = [];
 let powerUps = [];
 let proyectiles = [];
@@ -31,16 +56,6 @@ let efectoActivo = null;
 let efectoTimeout = null;
 let inmuneSegundosRestantes = 0;
 let clickBloqueado = false;
-
-// Sprite de Blackdaya desde GitHub
-let imgBlackdaya = new Image();
-let blackdayaCargado = false;
-
-imgBlackdaya.onload = () => {
-  blackdayaCargado = true;
-};
-
-imgBlackdaya.src = "https://raw.githubusercontent.com/stickybonesjr/bdaya_game/main/assets/blackdaya_estatico.png";
 
 const jugador = {
   x: 100,
@@ -63,7 +78,6 @@ canvas.addEventListener("pointerdown", e => {
     lanzarProyectil();
     jugador.artefactos--;
     if (jugador.artefactos <= 0) efectoActivo = null;
-
     clickBloqueado = true;
     setTimeout(() => clickBloqueado = false, 150);
     return;
@@ -74,6 +88,15 @@ canvas.addEventListener("pointerdown", e => {
     jugador.enSuelo = false;
   }
 });
+
+canvas.addEventListener("click", () => {
+  if (!jugador.vivo && juegoListo) reiniciar();
+});
+
+function iniciarJuego() {
+  juegoListo = true;
+  bucle();
+}
 
 let distanciaMin = 220;
 let distanciaMax = 380;
@@ -103,12 +126,6 @@ function crearObstáculo() {
   }
 
   siguienteEspacio = generarNuevaDistancia();
-}
-
-function puedeGenerarNuevo() {
-  if (obstáculos.length === 0) return true;
-  const ultimo = obstáculos[obstáculos.length - 1];
-  return ultimo.x + ultimo.w < canvas.width - siguienteEspacio;
 }
 
 function aplicarPowerUp(tipo) {
@@ -145,27 +162,58 @@ function lanzarProyectil() {
   });
 }
 
+function actualizarJuego() {
+  if (!jugador.vivo) return;
+
+  if (tiempo % 600 === 0) velocidadBase += 0.5;
+
+  if (puedeGenerarNuevo()) crearObstáculo();
+  actualizarJugador();
+  actualizarObstáculos();
+  actualizarPowerUps();
+  actualizarProyectiles();
+}
+
+function puedeGenerarNuevo() {
+  if (obstáculos.length === 0) return true;
+  const ultimo = obstáculos[obstáculos.length - 1];
+  return ultimo.x + ultimo.w < canvas.width - siguienteEspacio;
+}
+
+function actualizarJugador() {
+  jugador.vy += jugador.gravedad;
+  jugador.y += jugador.vy;
+
+  if (jugador.y >= sueloY - jugador.h) {
+    jugador.y = sueloY - jugador.h;
+    jugador.vy = 0;
+    jugador.enSuelo = true;
+  }
+}
+
+function colisiona(a, b) {
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
+  );
+}
+
 function actualizarObstáculos() {
-  obstáculos.forEach(o => {
+  for (let i = 0; i < obstáculos.length; i++) {
+    const o = obstáculos[i];
     o.x -= o.velocidad;
+
     if (!o.contado && o.x + o.w < 0) {
       años++;
       o.contado = true;
     }
 
-    const margen = 6;
-    const colision =
-      jugador.vivo &&
-      !jugador.invulnerable &&
-      jugador.x + margen < o.x + o.w &&
-      jugador.x + jugador.w - margen > o.x &&
-      jugador.y + margen < o.y + o.h &&
-      jugador.y + jugador.h - margen > o.y;
-
-    if (colision) {
+    if (jugador.vivo && !jugador.invulnerable && colisiona(jugador, o)) {
       jugador.vivo = false;
     }
-  });
+  }
 
   obstáculos = obstáculos.filter(o => o.x + o.w > -100);
 }
@@ -176,10 +224,7 @@ function actualizarPowerUps() {
 
     if (
       !p.recogido &&
-      jugador.x < p.x + p.w &&
-      jugador.x + jugador.w > p.x &&
-      jugador.y < p.y + p.h &&
-      jugador.y + jugador.h > p.y
+      colisiona(jugador, p)
     ) {
       p.recogido = true;
       aplicarPowerUp(p.tipo);
@@ -195,10 +240,7 @@ function actualizarProyectiles() {
     obstáculos.forEach((o, i) => {
       if (
         !p.destruido &&
-        p.x < o.x + o.w &&
-        p.x + p.w > o.x &&
-        p.y < o.y + o.h &&
-        p.y + p.h > o.y
+        colisiona(p, o)
       ) {
         obstáculos.splice(i, 1);
         p.destruido = true;
@@ -210,24 +252,9 @@ function actualizarProyectiles() {
   proyectiles = proyectiles.filter(p => p.x < canvas.width && !p.destruido);
 }
 
-function actualizarJugador() {
-  jugador.vy += jugador.gravedad;
-  jugador.y += jugador.vy;
-
-  if (jugador.y >= sueloY - jugador.h) {
-    jugador.y = sueloY - jugador.h;
-    jugador.vy = 0;
-    jugador.enSuelo = true;
-  }
-}
-
 function dibujarJugador() {
-  if (blackdayaCargado) {
-    ctx.drawImage(imgBlackdaya, jugador.x, jugador.y, jugador.w, jugador.h);
-  } else {
-    ctx.fillStyle = jugador.vivo ? "skyblue" : "crimson";
-    ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
-  }
+  const img = imagenes.blackdaya;
+  ctx.drawImage(img, jugador.x, jugador.y, jugador.w, jugador.h);
 }
 
 function dibujarObstáculos() {
@@ -291,21 +318,18 @@ function reiniciar() {
   velocidadBase = 4;
 }
 
-canvas.addEventListener("click", () => {
-  if (!jugador.vivo) reiniciar();
-});
-
 function bucle() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (jugador.vivo && puedeGenerarNuevo()) crearObstáculo();
+  if (!juegoListo) {
+    ctx.fillStyle = "white";
+    ctx.font = "24px monospace";
+    ctx.fillText("Cargando...", 340, 200);
+    requestAnimationFrame(bucle);
+    return;
+  }
 
-  if (tiempo % 600 === 0) velocidadBase += 0.5;
-
-  actualizarJugador();
-  actualizarObstáculos();
-  actualizarPowerUps();
-  actualizarProyectiles();
+  actualizarJuego();
 
   dibujarJugador();
   dibujarObstáculos();
@@ -316,8 +340,6 @@ function bucle() {
   tiempo++;
   requestAnimationFrame(bucle);
 }
-
-bucle();
 </script>
 </body>
 </html>
