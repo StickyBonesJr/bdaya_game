@@ -303,7 +303,7 @@ function dibujarTexto() {
 
 function reiniciar() {
   años = 0;
-  obstáculos = [];
+  obstáculos = obstáculos.filter(o => o.x > jugador.x + jugador.w + 10);
   powerUps = [];
   proyectiles = [];
   jugador.vivo = true;
