@@ -59,10 +59,10 @@ let inmuneSegundosRestantes = 0;
 let clickBloqueado = false;
 
 const jugador = {
-  x: 130,
-  y: sueloY - 130,
-  w: 86,
-  h: 130,
+  x: 100,
+  y: sueloY - 90,
+  w: 60,
+  h: 90,
   vy: 0,
   gravedad: 0.6,
   enSuelo: true,
@@ -283,7 +283,7 @@ function dibujarFondo() {
 
 function dibujarJugador() {
   const img = imagenes.blackdaya;
-  ctx.drawImage(img, jugador.x, jugador.y, jugador.w, jugador.h);
+  ctx.drawImage(img, jugador.x - 20, jugador.y - 30, jugador.w * 1.5, jugador.h * 1.5);
 }
 
 function dibujarObstáculos() {
