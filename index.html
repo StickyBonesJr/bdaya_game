@@ -20,7 +20,7 @@
 const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
-const escala = 1.7;
+const escala = 1.2;
 
 const sueloY = canvas.height - 30;
 
@@ -62,9 +62,9 @@ let clickBloqueado = false;
 
 const jugador = {
   x: 100,
-  y: sueloY - 90 * escala,
-  w: 60 * escala,
-  h: 90 * escala,
+  y: sueloY - 100 * escala,
+  w: 70 * escala,
+  h: 100 * escala,
   vy: 0,
   gravedad: 0.6,
   enSuelo: true,
