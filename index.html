@@ -20,7 +20,7 @@
 const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
-const escala = 1.2;
+const escala = 1.0;
 
 const sueloY = canvas.height - 30;
 
@@ -61,10 +61,10 @@ let inmuneSegundosRestantes = 0;
 let clickBloqueado = false;
 
 const jugador = {
-  x: 100,
-  y: sueloY - 100 * escala,
-  w: 70 * escala,
-  h: 100 * escala,
+  x: 112,
+  y: sueloY - 112,
+  w: 75,
+  h: 112,
   vy: 0,
   gravedad: 0.6,
   enSuelo: true,
@@ -110,8 +110,8 @@ function generarNuevaDistancia() {
 }
 
 function crearObstáculo() {
-  const altura = (Math.floor(Math.random() * 50) + 30) * escala;
-  const ancho = (Math.floor(Math.random() * 30) + 30) * escala;
+  const altura = Math.floor(Math.random() * 50) + 30;
+  const ancho = Math.floor(Math.random() * 30) + 30;
   const y = sueloY - altura;
   obstáculos.push({ x: canvas.width, y, w: ancho, h: altura, velocidad: velocidadBase, contado: false });
 
@@ -120,9 +120,9 @@ function crearObstáculo() {
     powerUps.push({
       tipo,
       x: canvas.width + 60,
-      y: sueloY - altura - (30 * escala),
-      w: 20 * escala,
-      h: 20 * escala,
+      y: sueloY - altura - 40,
+      w: 20,
+      h: 20,
       velocidad: velocidadBase,
       recogido: false
     });
