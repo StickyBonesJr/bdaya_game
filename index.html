@@ -129,19 +129,18 @@ function crearObstáculo() {
 }
 
 function aplicarPowerUp(tipo) {
-  if (efectoTimeout) clearTimeout(efectoTimeout);
+  limpiarPowerUps(); // ← elimina cualquier efecto anterior
+
   efectoActivo = tipo;
 
   if (tipo === "inmune") {
     jugador.invulnerable = true;
     inmuneSegundosRestantes = 5;
+
     efectoTimeout = setInterval(() => {
       inmuneSegundosRestantes--;
       if (inmuneSegundosRestantes <= 0) {
-        jugador.invulnerable = false;
-        efectoActivo = null;
-        clearInterval(efectoTimeout);
-        efectoTimeout = null;
+        limpiarPowerUps(); // ← apaga la inmunidad correctamente
       }
     }, 1000);
   }
@@ -151,6 +150,24 @@ function aplicarPowerUp(tipo) {
   }
 }
 
+function limpiarPowerUps() {
+  if (efectoTimeout) {
+    clearTimeout(efectoTimeout);
+    efectoTimeout = null;
+  }
+
+  if (efectoActivo === "inmune") {
+    jugador.invulnerable = false;
+    inmuneSegundosRestantes = 0;
+  }
+
+  if (efectoActivo === "artefacto") {
+    jugador.artefactos = 0;
+  }
+
+  efectoActivo = null;
+}
+  
 function lanzarProyectil() {
   proyectiles.push({
     x: jugador.x + jugador.w,
