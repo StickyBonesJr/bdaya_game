@@ -20,11 +20,12 @@
 const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
-const sueloY = canvas.height;
+const sueloY = canvas.height - 60;
 
 // Assets
 const assets = {
   blackdaya: "https://raw.githubusercontent.com/stickybonesjr/bdaya_game/main/assets/blackdaya_estatico.png"
+  fondo: 
 };
 
 const imagenes = {};
@@ -269,6 +270,11 @@ function actualizarProyectiles() {
   proyectiles = proyectiles.filter(p => p.x < canvas.width && !p.destruido);
 }
 
+function dibujarFondo() {
+  const img = imagenes.fondo;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+}
+
 function dibujarJugador() {
   const img = imagenes.blackdaya;
   ctx.drawImage(img, jugador.x, jugador.y, jugador.w, jugador.h);
@@ -348,6 +354,7 @@ function bucle() {
 
   actualizarJuego();
 
+  dibujarFondo();
   dibujarJugador();
   dibujarObstáculos();
   dibujarPowerUps();
