@@ -20,7 +20,7 @@
 const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
-const escala = 1.5;
+const escala = 1.7;
 
 const sueloY = canvas.height - 30;
 
@@ -174,7 +174,7 @@ function limpiarPowerUps() {
 function lanzarProyectil() {
   proyectiles.push({
     x: jugador.x + jugador.w,
-    y: jugador.y + jugador.h / 3,
+    y: jugador.y + jugador.h * 0.75,
     w: 20 * escala,
     h: 10 * escala,
     velocidad: 8,
@@ -274,7 +274,13 @@ function actualizarProyectiles() {
 
 function dibujarFondo() {
   const img = imagenes.fondo;
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const aspectRatio = img.width / img.height;
+  const targetWidth = canvas.width;
+  const targetHeight = canvas.width / aspectRatio;
+
+  const offsetY = canvas.height - targetHeight;
+
+  ctx.drawImage(img, 0, offsetY, targetWidth, targetHeight);
 }
 
 function dibujarJugador() {
