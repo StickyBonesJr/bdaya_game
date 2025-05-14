@@ -20,6 +20,8 @@
 const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
+const escala = 1.5;
+
 const sueloY = canvas.height - 30;
 
 // Assets
@@ -60,9 +62,9 @@ let clickBloqueado = false;
 
 const jugador = {
   x: 100,
-  y: sueloY - 112,
-  w: 75,
-  h: 112,
+  y: sueloY - 90 * escala,
+  w: 60 * escala,
+  h: 90 * escala,
   vy: 0,
   gravedad: 0.6,
   enSuelo: true,
@@ -108,8 +110,8 @@ function generarNuevaDistancia() {
 }
 
 function crearObstáculo() {
-  const altura = Math.floor(Math.random() * 50) + 30;
-  const ancho = Math.floor(Math.random() * 30) + 30;
+  const altura = (Math.floor(Math.random() * 50) + 30) * escala;
+  const ancho = (Math.floor(Math.random() * 30) + 30) * escala;
   const y = sueloY - altura;
   obstáculos.push({ x: canvas.width, y, w: ancho, h: altura, velocidad: velocidadBase, contado: false });
 
@@ -118,9 +120,9 @@ function crearObstáculo() {
     powerUps.push({
       tipo,
       x: canvas.width + 60,
-      y: sueloY - altura - 40,
-      w: 20,
-      h: 20,
+      y: sueloY - altura - (30 * escala),
+      w: 20 * escala,
+      h: 20 * escala,
       velocidad: velocidadBase,
       recogido: false
     });
@@ -172,9 +174,9 @@ function limpiarPowerUps() {
 function lanzarProyectil() {
   proyectiles.push({
     x: jugador.x + jugador.w,
-    y: jugador.y + jugador.h / 2,
-    w: 20,
-    h: 10,
+    y: jugador.y + jugador.h / 3,
+    w: 20 * escala,
+    h: 10 * escala,
     velocidad: 8,
     destruido: false
   });
