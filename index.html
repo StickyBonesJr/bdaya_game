@@ -20,8 +20,6 @@
 const canvas = document.getElementById("juego");
 const ctx = canvas.getContext("2d");
 
-const escala = 1.0;
-
 const sueloY = canvas.height - 30;
 
 // Assets
@@ -61,10 +59,10 @@ let inmuneSegundosRestantes = 0;
 let clickBloqueado = false;
 
 const jugador = {
-  x: 112,
-  y: sueloY - 112,
-  w: 75,
-  h: 112,
+  x: 130,
+  y: sueloY - 130,
+  w: 86,
+  h: 130,
   vy: 0,
   gravedad: 0.6,
   enSuelo: true,
